@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LC79 MD5 VIP</title>
+<style>
+:root{
+  --neon-blue:#00d4ff;
+  --neon-red:#ff2a5f;
+  --neon-gold:#ffb703;
+  --neon-green:#00ff88;
+  --text-main:#f1f5f9;
+  --text-sub:#64748b;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Roboto,-apple-system,sans-serif;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:#050b14;color:var(--text-main);}
+#game{position:fixed;inset:0;width:100vw;height:100vh;border:none;z-index:1;}
+
+#toggleBtn{
+  position:fixed;bottom:20px;right:20px;z-index:99999;
+  padding:11px 20px;border-radius:50px;
+  border:1.5px solid rgba(0,212,255,0.6);
+  background:linear-gradient(135deg,rgba(15,32,67,0.95),rgba(5,12,25,0.98));
+  color:var(--neon-blue);font-size:12px;font-weight:800;
+  letter-spacing:1.5px;cursor:pointer;
+  box-shadow:0 0 22px rgba(0,212,255,0.4),inset 0 0 10px rgba(0,212,255,0.15);
+  backdrop-filter:blur(12px);
+  display:flex;align-items:center;gap:8px;
+  animation:floatBtn 3s ease-in-out infinite;
+  transition:transform .2s;
+}
+@keyframes floatBtn{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+#toggleBtn::before{
+  content:'';width:8px;height:8px;border-radius:50%;
+  background:var(--neon-green);
+  box-shadow:0 0 8px var(--neon-green);
+  animation:pulseDot 1.5s infinite;
+}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+#toggleBtn:active{transform:scale(.95);}
+
+#tool{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0.85);
+  z-index:99998;width:240px;
+  background:linear-gradient(160deg,rgba(10,25,45,0.95),rgba(5,12,25,0.98));
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-radius:18px;padding:12px;
+  border:1.5px solid rgba(0,212,255,0.35);
+  box-shadow:
+    0 25px 60px rgba(0,0,0,0.9),
+    0 0 40px rgba(0,212,255,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+  transition:opacity .3s ease, transform .3s ease;
+  display:none;opacity:0;
+  overflow:hidden;
+  touch-action:none;
+  cursor:default;
+}
+#tool.open{display:block;opacity:1;transform:translate(-50%,-50%) scale(1);}
+
+#tool::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--neon-blue),transparent);
+  animation:scanLine 3s linear infinite;
+}
+@keyframes scanLine{0%{left:-100%}100%{left:100%}}
+
+#tool::after{
+  content:'';position:absolute;bottom:-50px;right:-50px;
+  width:150px;height:150px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,212,255,0.12),transparent 70%);
+  animation:orbGlow 5s infinite ease-in-out;
+  pointer-events:none;
+}
+@keyframes orbGlow{
+  0%,100%{transform:translate(0,0) scale(1);opacity:.4;}
+  50%{transform:translate(-20px,-20px) scale(1.2);opacity:.8;}
+}
+
+#toolHeader{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px;padding:6px 10px;border-radius:10px;
+  background:linear-gradient(90deg,rgba(0,212,255,0.12),rgba(0,212,255,0.02));
+  border:1px solid rgba(0,212,255,0.2);
+  position:relative;z-index:1;
+  cursor:move;
+}
+#toolTitle{
+  font-size:10px;font-weight:800;color:var(--neon-blue);
+  letter-spacing:1.8px;display:flex;align-items:center;gap:6px;
+  text-shadow:0 0 10px rgba(0,212,255,0.8);
+  pointer-events:none;
+}
+#toolTitle span:first-child{
+  font-size:13px;filter:drop-shadow(0 0 5px var(--neon-blue));
+}
+#closeBtn{
+  width:20px;height:20px;border-radius:6px;border:none;
+  background:rgba(255,255,255,0.06);
+  color:var(--text-sub);font-size:11px;font-weight:bold;
+  cursor:pointer;transition:.25s;
+  display:flex;align-items:center;justify-content:center;
+}
+#closeBtn:hover{background:rgba(255,42,95,0.25);color:var(--neon-red);}
+
+#phienBox{
+  background:linear-gradient(135deg,rgba(0,0,0,0.5),rgba(0,30,60,0.3));
+  border-radius:10px;padding:7px;margin-bottom:8px;
+  border:1px solid rgba(0,212,255,0.18);
+  text-align:center;
+  position:relative;z-index:1;
+}
+#phienLabel{
+  font-size:8px;font-weight:700;color:var(--text-sub);
+  letter-spacing:1.5px;margin-bottom:2px;
+}
+#phienValue{
+  font-size:15px;font-weight:700;color:var(--text-main);
+  font-family:'Courier New',monospace;letter-spacing:2px;
+  text-shadow:0 0 8px rgba(241,245,249,0.4);
+}
+
+#kqBox{
+  background:linear-gradient(180deg,rgba(0,212,255,0.1) 0%,rgba(0,0,0,0.45) 100%);
+  border-radius:12px;padding:10px;margin-bottom:8px;
+  border:1px solid rgba(0,212,255,0.28);
+  text-align:center;
+  position:relative;z-index:1;
+  overflow:hidden;
+}
+#kqBox::before{
+  content:'';position:absolute;top:50%;left:50%;
+  width:110px;height:110px;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle,rgba(0,212,255,0.15),transparent 70%);
+  animation:kqPulse 2.5s infinite ease-in-out;
+  pointer-events:none;
+}
+@keyframes kqPulse{
+  0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(1);}
+  50%{opacity:1;transform:translate(-50%,-50%) scale(1.15);}
+}
+#kqLabel{
+  font-size:8px;font-weight:700;color:#8aa2c0;
+  letter-spacing:2px;margin-bottom:3px;position:relative;
+}
+#kqValue{
+  font-size:30px;font-weight:900;
+  font-family:'Segoe UI',Impact,sans-serif;
+  letter-spacing:4px;line-height:1.05;
+  position:relative;
+  transition:all .3s ease;
+}
+#kqValue.tai{
+  color:var(--neon-red);
+  text-shadow:0 0 20px rgba(255,42,95,1),0 0 40px rgba(255,42,95,0.5);
+}
+#kqValue.xiu{
+  color:var(--neon-blue);
+  text-shadow:0 0 20px rgba(0,212,255,1),0 0 40px rgba(0,212,255,0.5);
+}
+
+#tinCayBox{
+  background:linear-gradient(135deg,rgba(0,0,0,0.5),rgba(40,20,0,0.3));
+  border-radius:10px;padding:9px;
+  border:1px solid rgba(255,183,3,0.22);
+  text-align:center;
+  position:relative;z-index:1;
+}
+#tinCayLabel{
+  font-size:8px;font-weight:700;color:#8a7a4a;
+  letter-spacing:1.5px;margin-bottom:4px;
+}
+#tinCayValue{
+  font-size:19px;font-weight:800;color:var(--neon-gold);
+  font-family:'Courier New',monospace;
+  text-shadow:0 0 14px rgba(255,183,3,0.85);
+  transition:all .35s;
+}
+#tinCayBar{
+  height:5px;border-radius:10px;background:rgba(0,0,0,0.6);
+  margin-top:7px;overflow:hidden;
+}
+#tinCayFill{
+  height:100%;border-radius:10px;
+  background:linear-gradient(90deg,#ff8800,var(--neon-gold),#ffeaa0);
+  background-size:200% 100%;
+  box-shadow:0 0 10px var(--neon-gold);
+  transition:width .8s cubic-bezier(0.4,0,0.2,1);
+  animation:shineBar 2s linear infinite;
+}
+@keyframes shineBar{
+  0%{background-position:0% 50%;}
+  100%{background-position:200% 50%;}
+}
+
+#statusMsg{
+  font-size:8px;text-align:center;color:var(--text-sub);
+  margin-top:8px;letter-spacing:.3px;font-weight:600;
+  position:relative;z-index:1;min-height:11px;
+}
+</style>
+</head>
+<body>
+
+<iframe id="game" src="https://lc79.bet"></iframe>
+
+<button id="toggleBtn">LC79 VIP</button>
+
+<div id="tool">
+  <div id="toolHeader">
+    <div id="toolTitle"><span>⚡</span> LC79 VIP</div>
+    <button id="closeBtn">✕</button>
+  </div>
+
+  <div id="phienBox">
+    <div id="phienLabel">PHIÊN TIẾP THEO</div>
+    <div id="phienValue">--</div>
+  </div>
+
+  <div id="kqBox">
+    <div id="kqLabel">DỰ ĐOÁN</div>
+    <div id="kqValue" class="tai">--</div>
+  </div>
+
+  <div id="tinCayBox">
+    <div id="tinCayLabel">ĐỘ TIN CẬY</div>
+    <div id="tinCayValue">%</div>
+    <div id="tinCayBar"><div id="tinCayFill" style="width:0%"></div></div>
+  </div>
+
+  <div id="statusMsg">Đang phân tích...</div>
+</div>
+
+<script>
+const toggleBtn=document.getElementById("toggleBtn");
+const tool=document.getElementById("tool");
+const closeBtn=document.getElementById("closeBtn");
+const toolHeader=document.getElementById("toolHeader");
+const phienValue=document.getElementById("phienValue");
+const kqValue=document.getElementById("kqValue");
+const tinCayValue=document.getElementById("tinCayValue");
+const tinCayFill=document.getElementById("tinCayFill");
+const statusMsg=document.getElementById("statusMsg");
+
+const API_URL="https://wtxmd52.tele68.com/v1/txmd5/sessions";
+const API_PROXY="https://api.allorigins.win/raw?url=";
+const POLL=2500;
+
+toggleBtn.addEventListener("click",()=>tool.classList.toggle("open"));
+closeBtn.addEventListener("click",()=>tool.classList.remove("open"));
+
+/* DRAG TOOL */
+let dragging=false,ox=0,oy=0;
+toolHeader.addEventListener("mousedown",e=>{
+  if(e.target===closeBtn)return;
+  dragging=true;
+  const r=tool.getBoundingClientRect();
+  ox=e.clientX-r.left;
+  oy=e.clientY-r.top;
+  tool.style.transform="none";
+  tool.style.left=r.left+"px";
+  tool.style.top=r.top+"px";
+});
+toolHeader.addEventListener("touchstart",e=>{
+  if(e.target===closeBtn)return;
+  const r=tool.getBoundingClientRect();
+  const t=e.touches[0];
+  dragging=true;
+  ox=t.clientX-r.left;
+  oy=t.clientY-r.top;
+  tool.style.transform="none";
+  tool.style.left=r.left+"px";
+  tool.style.top=r.top+"px";
+},{passive:true});
+
+document.addEventListener("mousemove",e=>{
+  if(!dragging)return;
+  tool.style.left=(e.clientX-ox)+"px";
+  tool.style.top=(e.clientY-oy)+"px";
+});
+document.addEventListener("touchmove",e=>{
+  if(!dragging)return;
+  const t=e.touches[0];
+  tool.style.left=(t.clientX-ox)+"px";
+  tool.style.top=(t.clientY-oy)+"px";
+  e.preventDefault();
+},{passive:false});
+
+document.addEventListener("mouseup",()=>dragging=false);
+document.addEventListener("touchend",()=>dragging=false);
+
+/* ================= THUẬT TOÁN DỰ ĐOÁN ================= */
+function analyzeHistory(history){
+  if(!history||history.length<5)return null;
+  const recent=history.slice(0,25);
+  const n=recent.length;
+
+  let countT=0,countX=0;
+  for(let i=0;i<n;i++){if(recent[i]==="T")countT++;else countX++;}
+
+  let streak=1,streakVal=recent[0];
+  for(let i=1;i<n;i++){
+    if(recent[i]===streakVal)streak++;
+    else break;
+  }
+
+  let streakAlt=1;
+  for(let i=1;i<n;i++){
+    const expected=(i%2===0)?streakVal:(streakVal==="T"?"X":"T");
+    if(recent[i]===expected)streakAlt++;
+    else break;
+  }
+
+  let count22=0;
+  for(let i=0;i<n-3;i++){
+    if(recent[i]===recent[i+1]&&recent[i+2]===recent[i+3]&&recent[i]!==recent[i+2])count22++;
+  }
+
+  let count33=0;
+  for(let i=0;i<n-5;i++){
+    if(recent[i]===recent[i+1]&&recent[i+1]===recent[i+2]&&
+       recent[i+3]===recent[i+4]&&recent[i+4]===recent[i+5]&&
+       recent[i]!==recent[i+3])count33++;
+  }
+
+  const ratioT=countT/n;
+  const ratioX=countX/n;
+
+  let prediction="",confidence=60,reason="";
+
+  if(streak>=6){
+    prediction=streakVal==="T"?"X":"T";
+    confidence=60+streak*3;
+    reason="Bẻ cầu bệt "+streak+" tay";
+  }
+  else if(count33>=1){
+    prediction=recent[0];
+    confidence=88;
+    reason="Bám cầu 3-3";
+  }
+  else if(streakAlt>=5){
+    prediction=streakVal==="T"?"X":"T";
+    confidence=84+streakAlt;
+    reason="Bám cầu 1-1 ("+streakAlt+" nhịp)";
+  }
+  else if(streak>=4){
+    prediction=streakVal==="T"?"X":"T";
+    confidence=68+streak*2;
+    reason="Bẻ bệt tay thứ "+streak;
+  }
+  else if(count22>=2){
+    prediction=recent[0]==="T"?"X":"T";
+    confidence=76;
+    reason="Bắt đảo cầu 2-2";
+  }
+  else if(ratioT>0.68){
+    prediction="X";
+    confidence=70+((ratioT-0.5)*40);
+    reason="Tài áp đảo → Bẻ Xỉu";
+  }
+  else if(ratioX>0.68){
+    prediction="T";
+    confidence=70+((ratioX-0.5)*40);
+    reason="Xỉu áp đảo → Bẻ Tài";
+  }
+  else{
+    prediction=recent[0]==="T"?"X":"T";
+    confidence=62;
+    reason="Đánh theo xu hướng ngắn";
+  }
+
+  const diff=countT-countX;
+  const absDiff=diff<0?-diff:diff;
+  if(absDiff>=5)confidence+=5;
+  else if(absDiff>=3)confidence+=3;
+
+  confidence=confidence-(confidence%1);
+  if(confidence<55)confidence=55;
+  if(confidence>96)confidence=96;
+
+  return{prediction,confidence,reason};
+}
+
+/* ================= LẤY API ================= */
+async function fetchGameData(){
+  const endpoints=[API_URL,API_PROXY+encodeURIComponent(API_URL)];
+  for(const url of endpoints){
+    try{
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),3500);
+      const response=await fetch(url,{signal:controller.signal,cache:"no-store"});
+      clearTimeout(timer);
+      if(!response.ok)continue;
+      const data=await response.json();
+      if(data&&data.list&&data.list.length>0)return data;
+    }catch(err){}
+  }
+  return null;
+}
+
+let currentSessionId=null;
+
+function renderUI(data){
+  if(!data||!data.list||data.list.length<5)return;
+  const latest=data.list[0];
+  const nextSession=String(Number(latest.id)+1);
+
+  phienValue.textContent=nextSession;
+
+  if(currentSessionId===latest.id)return;
+  currentSessionId=latest.id;
+
+  const history=data.list
+    .map(item=>(item.resultTruyenThong||"").toUpperCase())
+    .map(res=>res==="TAI"?"T":res==="XIU"?"X":null)
+    .filter(Boolean);
+
+  const result=analyzeHistory(history);
+  if(!result)return;
+
+  kqValue.textContent=result.prediction==="T"?"TÀI":"XỈU";
+  kqValue.className=result.prediction==="T"?"tai":"xiu";
+
+  tinCayValue.textContent=result.confidence+"%";
+  tinCayFill.style.width=result.confidence+"%";
+
+  statusMsg.textContent="#"+nextSession+" • "+result.reason;
+}
+
+async function mainLoop(){
+  const data=await fetchGameData();
+  if(data)renderUI(data);
+}
+mainLoop();
+setInterval(mainLoop,POLL);
+</script>
+</body>
+</html>
